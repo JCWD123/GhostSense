@@ -19,14 +19,41 @@ async def init_table_schema(db_type: str):
     Initializes the database table schema. 
     This will create tables based on the ORM models.
     Args:
-        db_type: The type of database, 'sqlite', 'mysql', or 'postgresql'.
+        db_type: The type of database, 'sqlite', 'mysql', 'postgresql', or 'mongodb'.
     """
     utils.logger.info(f"[init_table_schema] begin init {db_type} table schema ...")
-    await create_tables(db_type)
-    utils.logger.info(f"[init_table_schema] {db_type} table schema init successful")
+    
+    # MongoDB 使用不同的初始化方式
+    if db_type == "mongodb":
+        try:
+            from database.mongodb_session import init_mongodb_indexes, test_mongodb_connection
+            
+            # 测试连接
+            if not await test_mongodb_connection():
+                utils.logger.error("[init_table_schema] MongoDB connection test failed")
+                return False
+            
+            # 初始化索引
+            if not await init_mongodb_indexes():
+                utils.logger.error("[init_table_schema] MongoDB indexes initialization failed")
+                return False
+            
+            utils.logger.info("[init_table_schema] MongoDB initialization successful")
+            return True
+        except ImportError:
+            utils.logger.error(
+                "[init_table_schema] MongoDB support requires 'motor' package. "
+                "Please install: pip install motor"
+            )
+            return False
+    else:
+        # SQL 数据库初始化
+        await create_tables(db_type)
+        utils.logger.info(f"[init_table_schema] {db_type} table schema init successful")
+        return True
 
 async def init_db(db_type: str = None):
-    await init_table_schema(db_type)
+    return await init_table_schema(db_type)
 
 async def close():
     """

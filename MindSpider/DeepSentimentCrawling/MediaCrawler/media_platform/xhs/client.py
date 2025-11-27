@@ -126,13 +126,18 @@ class XiaoHongShuClient(AbstractApiClient):
         async with httpx.AsyncClient(proxy=self.proxy) as client:
             response = await client.request(method, url, timeout=self.timeout, **kwargs)
 
-        if response.status_code == 471 or response.status_code == 461:
-            # someday someone maybe will bypass captcha
-            verify_type = response.headers["Verifytype"]
-            verify_uuid = response.headers["Verifyuuid"]
-            msg = f"出现验证码，请求失败，Verifytype: {verify_type}，Verifyuuid: {verify_uuid}, Response: {response}"
+        if response.status_code in (471, 461):
+            verify_type = response.headers.get("Verifytype")
+            verify_uuid = response.headers.get("Verifyuuid")
+            if verify_type and verify_uuid:
+                msg = f"出现验证码，请求失败，Verifytype: {verify_type}，Verifyuuid: {verify_uuid}, Response: {response.text}"
+            else:
+                msg = (
+                    "出现验证码或反爬拦截，但响应头缺少 Verifytype/Verifyuuid 信息，"
+                    f"status={response.status_code}, Response: {response.text}"
+                )
             utils.logger.error(msg)
-            raise Exception(msg)
+            raise DataFetchError(msg)
 
         if return_response:
             return response.text

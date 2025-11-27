@@ -63,6 +63,7 @@ class SaveDataOptionEnum(str, Enum):
     JSON = "json"
     SQLITE = "sqlite"
     POSTGRESQL = "postgresql"
+    MONGODB = "mongodb"
 
 
 class InitDbOptionEnum(str, Enum):
@@ -71,6 +72,7 @@ class InitDbOptionEnum(str, Enum):
     SQLITE = "sqlite"
     MYSQL = "mysql"
     POSTGRESQL = "postgresql"
+    MONGODB = "mongodb"
 
 
 def _to_bool(value: bool | str) -> bool:

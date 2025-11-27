@@ -209,12 +209,43 @@ class BilibiliCrawler(AbstractCrawler):
                 except Exception as e:
                     utils.logger.warning(f"[BilibiliCrawler.search_by_keywords] error in the task list. The video for this page will not be included. {e}")
                 video_items = await asyncio.gather(*task_list)
+                
+                # 用于收集本页涉及的 UP 主信息，以便后续爬取动态和联系方式
+                creators_to_crawl: Dict[int, Dict] = {}
+
                 for video_item in video_items:
                     if video_item:
                         video_id_list.append(video_item.get("View").get("aid"))
                         await bilibili_store.update_bilibili_video(video_item)
                         await bilibili_store.update_up_info(video_item)
                         await self.get_bilibili_video(video_item, semaphore)
+                        
+                        # 提取 UP 主信息
+                        card = video_item.get("Card", {}).get("card", {})
+                        mid = card.get("mid")
+                        if mid:
+                            mid = int(mid)
+                            creators_to_crawl[mid] = {
+                                "id": mid,
+                                "name": card.get("name"),
+                                "sign": card.get("sign"),
+                                "avatar": card.get("face"),
+                            }
+
+                # 并发爬取 UP 主的动态和联系方式（粉丝列表作为联系方式来源）
+                if creators_to_crawl:
+                    utils.logger.info(f"[BilibiliCrawler.search_by_keywords] Crawling extra info for {len(creators_to_crawl)} creators...")
+                    creator_tasks = []
+                    for creator_info in creators_to_crawl.values():
+                        # 爬取动态
+                        creator_tasks.append(self.get_dynamics(creator_info, semaphore))
+                        # 爬取粉丝列表（即联系方式表数据来源）
+                        creator_tasks.append(self.get_fans(creator_info, semaphore))
+                    
+                    # 使用 gather 并发执行，避免严重阻塞
+                    # 注意：这会显著增加请求量，可能会触发反爬限制，请留意日志
+                    await asyncio.gather(*creator_tasks)
+
                 page += 1
                 
                 # Sleep after page navigation

@@ -20,6 +20,14 @@ from var import source_keyword_var
 from .xhs_store_media import *
 from ._store_impl import *
 
+# 尝试导入 MongoDB 存储实现
+try:
+    from .mongodb_store import XhsMongoDBStoreImplement
+    MONGODB_AVAILABLE = True
+except ImportError:
+    MONGODB_AVAILABLE = False
+    XhsMongoDBStoreImplement = None
+
 
 class XhsStoreFactory:
     STORES = {
@@ -28,13 +36,22 @@ class XhsStoreFactory:
         "json": XhsJsonStoreImplement,
         "sqlite": XhsSqliteStoreImplement,
         "postgresql": XhsDbStoreImplement,
+        "mongodb": XhsMongoDBStoreImplement if MONGODB_AVAILABLE else None,
     }
 
     @staticmethod
     def create_store() -> AbstractStore:
         store_class = XhsStoreFactory.STORES.get(config.SAVE_DATA_OPTION)
         if not store_class:
-            raise ValueError("[XhsStoreFactory.create_store] Invalid save option only supported csv or db or json or sqlite or postgresql ...")
+            raise ValueError(
+                f"[XhsStoreFactory.create_store] Invalid save option: {config.SAVE_DATA_OPTION}. "
+                "Supported options: csv, db, json, sqlite, postgresql, mongodb"
+            )
+        if config.SAVE_DATA_OPTION == "mongodb" and not MONGODB_AVAILABLE:
+            raise ValueError(
+                "[XhsStoreFactory.create_store] MongoDB support requires 'motor' package. "
+                "Please install: pip install motor"
+            )
         return store_class()
 
 
