@@ -5,11 +5,17 @@
 
 import time
 from functools import wraps
-from typing import Callable, Any
+from typing import Callable, Any, Tuple
 import requests
 from loguru import logger
 
-# 配置日志
+# 尝试导入 OpenAI 异常，以便精确捕获
+try:
+    from openai import APIConnectionError, APITimeoutError, RateLimitError, InternalServerError, APIError
+    OPENAI_EXCEPTIONS = (APIConnectionError, APITimeoutError, RateLimitError, InternalServerError, APIError)
+except ImportError:
+    OPENAI_EXCEPTIONS = ()
+
 class RetryConfig:
     """重试配置类"""
     
@@ -19,7 +25,7 @@ class RetryConfig:
         initial_delay: float = 1.0,
         backoff_factor: float = 2.0,
         max_delay: float = 60.0,
-        retry_on_exceptions: tuple = None
+        retry_on_exceptions: Tuple = None
     ):
         """
         初始化重试配置
@@ -46,8 +52,8 @@ class RetryConfig:
                 requests.exceptions.TooManyRedirects,
                 ConnectionError,
                 TimeoutError,
-                Exception  # OpenAI和其他API可能抛出的一般异常
-            )
+                Exception  # 兜底捕获一般异常
+            ) + OPENAI_EXCEPTIONS
         else:
             self.retry_on_exceptions = retry_on_exceptions
 
@@ -118,14 +124,6 @@ def retry_on_network_error(
 ):
     """
     专门用于网络错误的重试装饰器（简化版）
-    
-    Args:
-        max_retries: 最大重试次数
-        initial_delay: 初始延迟秒数
-        backoff_factor: 退避因子
-    
-    Returns:
-        装饰器函数
     """
     config = RetryConfig(
         max_retries=max_retries,
@@ -142,13 +140,6 @@ def with_graceful_retry(config: RetryConfig = None, default_return=None):
     """
     优雅重试装饰器 - 用于非关键API调用
     失败后不会抛出异常，而是返回默认值，保证系统继续运行
-    
-    Args:
-        config: 重试配置，如果不提供则使用默认配置
-        default_return: 所有重试失败后返回的默认值
-    
-    Returns:
-        装饰器函数
     """
     if config is None:
         config = SEARCH_API_RETRY_CONFIG
@@ -158,7 +149,7 @@ def with_graceful_retry(config: RetryConfig = None, default_return=None):
         def wrapper(*args, **kwargs) -> Any:
             last_exception = None
             
-            for attempt in range(config.max_retries + 1):  # +1 因为第一次不算重试
+            for attempt in range(config.max_retries + 1):
                 try:
                     result = func(*args, **kwargs)
                     if attempt > 0:
@@ -169,13 +160,11 @@ def with_graceful_retry(config: RetryConfig = None, default_return=None):
                     last_exception = e
                     
                     if attempt == config.max_retries:
-                        # 最后一次尝试也失败了，返回默认值而不抛出异常
                         logger.warning(f"非关键API {func.__name__} 在 {config.max_retries + 1} 次尝试后仍然失败")
                         logger.warning(f"最终错误: {str(e)}")
                         logger.info(f"返回默认值以保证系统继续运行: {default_return}")
                         return default_return
                     
-                    # 计算延迟时间
                     delay = min(
                         config.initial_delay * (config.backoff_factor ** attempt),
                         config.max_delay
@@ -187,12 +176,10 @@ def with_graceful_retry(config: RetryConfig = None, default_return=None):
                     time.sleep(delay)
                 
                 except Exception as e:
-                    # 不在重试列表中的异常，返回默认值
                     logger.warning(f"非关键API {func.__name__} 遇到不可重试的异常: {str(e)}")
                     logger.info(f"返回默认值以保证系统继续运行: {default_return}")
                     return default_return
             
-            # 这里不应该到达，但作为安全网
             return default_return
             
         return wrapper
@@ -204,18 +191,7 @@ def make_retryable_request(
     max_retries: int = 5,
     **kwargs
 ) -> Any:
-    """
-    直接执行可重试的请求（不使用装饰器）
-    
-    Args:
-        request_func: 要执行的请求函数
-        *args: 传递给请求函数的位置参数
-        max_retries: 最大重试次数
-        **kwargs: 传递给请求函数的关键字参数
-    
-    Returns:
-        请求函数的返回值
-    """
+    """直接执行可重试的请求（不使用装饰器）"""
     config = RetryConfig(max_retries=max_retries)
     
     @with_retry(config)
@@ -224,24 +200,24 @@ def make_retryable_request(
     
     return _execute()
 
-# 预定义一些常用的重试配置
+# 预定义重试配置 - 针对不稳定网络优化
 LLM_RETRY_CONFIG = RetryConfig(
-    max_retries=6,        # 保持额外重试次数
-    initial_delay=60.0,   # 首次等待至少 1 分钟
-    backoff_factor=2.0,   # 继续使用指数退避
-    max_delay=600.0       # 单次等待最长 10 分钟
+    max_retries=10,       # 增加重试次数 (原6次)
+    initial_delay=5.0,    # 缩短初始延迟 (原60秒)，应对网络抖动
+    backoff_factor=1.5,   # 温和退避
+    max_delay=120.0       # 最大等待2分钟
 )
 
 SEARCH_API_RETRY_CONFIG = RetryConfig(
-    max_retries=5,        # 增加到5次重试
-    initial_delay=2.0,    # 增加初始延迟
-    backoff_factor=1.6,   # 调整退避因子
-    max_delay=25.0        # 增加最大延迟
+    max_retries=5,
+    initial_delay=2.0,
+    backoff_factor=1.6,
+    max_delay=25.0
 )
 
 DB_RETRY_CONFIG = RetryConfig(
-    max_retries=5,        # 增加到5次重试
-    initial_delay=1.0,    # 保持较短的数据库重试延迟
+    max_retries=5,
+    initial_delay=1.0,
     backoff_factor=1.5,
     max_delay=10.0
 )

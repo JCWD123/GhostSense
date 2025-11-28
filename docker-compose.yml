@@ -1,39 +1,36 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  bettafish:
-    image: ghcr.io/666ghj/bettafish:latest
-    # Speed up mirror
-    # image: ghcr.nju.edu.cn/666ghj/bettafish:latest
-    container_name: bettafish
-    restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-      - STREAMLIT_SERVER_ENABLE_FILE_WATCHER=false
+  redis:
+    image: redis:7-alpine
     ports:
-      - "5000:5000"
-      - "8501:8501"
-      - "8502:8502"
-      - "8503:8503"
+      - "6379:6379"
     volumes:
-      - ./logs:/app/logs
-      - ./final_reports:/app/final_reports
-      - ./.env:/app/.env  
-      - ./insight_engine_streamlit_reports:/app/insight_engine_streamlit_reports
-      - ./media_engine_streamlit_reports:/app/media_engine_streamlit_reports
-      - ./query_engine_streamlit_reports:/app/query_engine_streamlit_reports
+      - redis_data:/data
 
-  db:
-    image: postgres:15
-    container_name: bettafish-db
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-bettafish}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bettafish}
-      POSTGRES_DB: ${POSTGRES_DB:-bettafish}
-    ports:
-      - "${POSTGRES_PORT:-5444}:5432"
+  backend:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - ./db_data:/var/lib/postgresql/data
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - DB_HOST=host.docker.internal  # For accessing MySQL on host machine
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    command: celery -A app.core.celery_app worker --loglevel=info -Q insight-queue
+    volumes:
+      - ./backend:/app
+    environment:
+      - REDIS_HOST=redis
+      - DB_HOST=host.docker.internal
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:

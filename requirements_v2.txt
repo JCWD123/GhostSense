@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+celery[redis]
+redis
+python-dotenv
+sqlalchemy
+pymysql
+pydantic-settings
+loguru
+openai
+
