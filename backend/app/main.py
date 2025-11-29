@@ -22,7 +22,7 @@ def create_app() -> FastAPI:
 
     @app.get("/")
     def root():
-        return {"message": "Welcome to BettaFish Engine API", "docs": "/docs"}
+        return {"message": "Welcome to GhostSense Engine API", "docs": "/docs"}
 
     return app
 
