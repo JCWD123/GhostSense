@@ -1,7 +1,7 @@
 <div align="center">
 
 
-# GhostSense (微舆) - 智能多智能体舆情分析系统
+# GhostSense - 智能多智能体舆情分析系统
 
 [![License](https://img.shields.io/github/license/666ghj/BettaFish?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-v1.2.1-green.svg?style=flat-square)](https://github.com/666ghj/BettaFish)
@@ -14,7 +14,7 @@
 
 ## 📖 项目介绍
 
-**GhostSense (微舆)** 是一个创新型的多智能体（Multi-Agent）舆情分析系统。它打破了传统舆情监测的被动模式，通过模拟人类专家的协作机制，实现了从全网数据采集、深度分析到专业报告生成的全流程自动化。
+**GhostSense ** 是一个创新型的多智能体（Multi-Agent）舆情分析系统。它打破了传统舆情监测的被动模式，通过模拟人类专家的协作机制，实现了从全网数据采集、深度分析到专业报告生成的全流程自动化。
 
 系统核心在于其独特的 **"Agent Forum" (智能体论坛)** 机制：不同的专业智能体（搜索、多模态、内部分析）在论坛中像人类专家一样进行辩论、协作和思维碰撞，从而产生比单一模型更深入、更客观的分析结果。
 
