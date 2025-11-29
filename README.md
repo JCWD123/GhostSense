@@ -1,6 +1,5 @@
 <div align="center">
 
-<img src="static/image/logo_compressed.png" alt="GhostSense Logo" width="100%">
 
 # GhostSense (微舆) - 智能多智能体舆情分析系统
 
