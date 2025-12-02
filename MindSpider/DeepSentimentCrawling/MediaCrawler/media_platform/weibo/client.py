@@ -58,7 +58,14 @@ class WeiboClient:
         if enable_return_response:
             return response
 
-        data: Dict = response.json()
+        # 捕获JSON解析错误
+        try:
+            data: Dict = response.json()
+        except Exception as e:
+            utils.logger.error(f"[WeiboClient.request] Failed to parse JSON response from {method}:{url}, error: {e}")
+            utils.logger.error(f"[WeiboClient.request] Response content: {response.text[:500]}")  # 只记录前500字符
+            return {}
+        
         ok_code = data.get("ok")
         if ok_code == 0:  # response error
             utils.logger.error(f"[WeiboClient.request] request {method}:{url} err, res:{data}")

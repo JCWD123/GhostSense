@@ -340,7 +340,8 @@ class XiaoHongShuClient(AbstractApiClient):
             utils.logger.error(f"[XiaoHongShuClient.request] Response status: {response.status_code}")
             utils.logger.error(f"[XiaoHongShuClient.request] Response headers: {dict(response.headers)}")
             utils.logger.error(f"[XiaoHongShuClient.request] Response text (first 500 chars): {response_text[:500]}")
-            raise DataFetchError(f"Invalid JSON response: {e}")
+            # 返回空数据而不是抛出异常
+            return {}
 
         if data["success"]:
             return data.get("data", data.get("success", {}))

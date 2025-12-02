@@ -106,18 +106,22 @@ class BaiduTieBaClient(AbstractApiClient):
         )
 
         if response.status_code != 200:
-            utils.logger.error(f"Request failed, method: {method}, url: {url}, status code: {response.status_code}")
-            utils.logger.error(f"Request failed, response: {response.text}")
-            raise Exception(f"Request failed, method: {method}, url: {url}, status code: {response.status_code}")
+            utils.logger.error(f"[TiebaClient.request] Request failed, method: {method}, url: {url}, status code: {response.status_code}")
+            utils.logger.error(f"[TiebaClient.request] Response: {response.text[:500]}")
+            return {}
 
         if response.text == "" or response.text == "blocked":
-            utils.logger.error(f"request params incorrect, response.text: {response.text}")
-            raise Exception("account blocked")
+            utils.logger.error(f"[TiebaClient.request] Account may be blocked, response.text: {response.text}")
+            return {}
 
         if return_ori_content:
             return response.text
 
-        return response.json()
+        try:
+            return response.json()
+        except Exception as e:
+            utils.logger.error(f"[TiebaClient.request] Failed to parse JSON: {e}, response: {response.text[:500]}")
+            return {}
 
     async def get(self, uri: str, params=None, return_ori_content=False, **kwargs) -> Any:
         """

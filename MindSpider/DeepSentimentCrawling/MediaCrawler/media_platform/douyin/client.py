@@ -100,11 +100,15 @@ class DouYinClient(AbstractApiClient):
             response = await client.request(method, url, timeout=self.timeout, **kwargs)
         try:
             if response.text == "" or response.text == "blocked":
-                utils.logger.error(f"request params incrr, response.text: {response.text}")
-                raise Exception("account blocked")
+                utils.logger.error(f"[DouyinClient.request] Account may be blocked, response.text: {response.text}")
+                return {}
             return response.json()
+        except json.JSONDecodeError as e:
+            utils.logger.error(f"[DouyinClient.request] Failed to parse JSON: {e}, response: {response.text[:500]}")
+            return {}
         except Exception as e:
-            raise DataFetchError(f"{e}, {response.text}")
+            utils.logger.error(f"[DouyinClient.request] Request error: {e}, response: {response.text[:500]}")
+            return {}
 
     async def get(self, uri: str, params: Optional[Dict] = None, headers: Optional[Dict] = None):
         """

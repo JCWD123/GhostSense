@@ -47,7 +47,15 @@ class KuaiShouClient(AbstractApiClient):
     async def request(self, method, url, **kwargs) -> Any:
         async with httpx.AsyncClient(proxy=self.proxy) as client:
             response = await client.request(method, url, timeout=self.timeout, **kwargs)
-        data: Dict = response.json()
+        
+        # 捕获JSON解析错误
+        try:
+            data: Dict = response.json()
+        except Exception as e:
+            utils.logger.error(f"[KuaiShouClient.request] Failed to parse JSON response from {method}:{url}, error: {e}")
+            utils.logger.error(f"[KuaiShouClient.request] Response content: {response.text[:500]}")
+            return {}
+        
         if data.get("errors"):
             error_msg = data.get("errors", "unknown error")
             utils.logger.error(f"[KuaiShouClient.request] GraphQL API error: {error_msg}")

@@ -54,10 +54,14 @@ class BilibiliClient(AbstractApiClient):
         try:
             data: Dict = response.json()
         except json.JSONDecodeError:
-            utils.logger.error(f"[BilibiliClient.request] Failed to decode JSON from response. status_code: {response.status_code}, response_text: {response.text}")
-            raise DataFetchError(f"Failed to decode JSON, content: {response.text}")
+            utils.logger.error(f"[BilibiliClient.request] Failed to decode JSON from response. status_code: {response.status_code}, response_text: {response.text[:500]}")
+            # 返回空数据而不是抛出异常
+            return {}
+        
         if data.get("code") != 0:
-            raise DataFetchError(data.get("message", "unkonw error"))
+            utils.logger.error(f"[BilibiliClient.request] API error code: {data.get('code')}, message: {data.get('message', 'unknown error')}")
+            # 返回空数据而不是抛出异常
+            return {}
         else:
             return data.get("data", {})
 
