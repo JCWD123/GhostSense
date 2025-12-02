@@ -134,12 +134,23 @@ class KuaiDaiLiProxy(ProxyProvider):
 def new_kuai_daili_proxy() -> KuaiDaiLiProxy:
     """
     构造快代理HTTP实例
+    
+    使用说明：
+    1. 访问快代理官网注册并实名认证：https://www.kuaidaili.com/?ref=ldwkjqipvz6c
+    2. 获取免费试用或购买代理服务
+    3. 在订单详情中找到以下四个参数：
+       - kdl_secret_id: 您的快代理Secret ID
+       - kdl_signature: 您的快代理签名
+       - kdl_user_name: 您的快代理用户名
+       - kdl_user_pwd: 您的快代理密码
+    4. 将这些参数设置为环境变量，或直接修改下方的默认值
+    
     Returns:
-
+        KuaiDaiLiProxy实例
     """
     return KuaiDaiLiProxy(
-        kdl_secret_id=os.getenv("kdl_secret_id", "你的快代理secert_id"),
-        kdl_signature=os.getenv("kdl_signature", "你的快代理签名"),
-        kdl_user_name=os.getenv("kdl_user_name", "你的快代理用户名"),
-        kdl_user_pwd=os.getenv("kdl_user_pwd", "你的快代理密码"),
+        kdl_secret_id=os.getenv("kdl_secret_id", "请填写您的快代理Secret_ID"),
+        kdl_signature=os.getenv("kdl_signature", "请填写您的快代理签名Signature"),
+        kdl_user_name=os.getenv("kdl_user_name", "请填写您的快代理用户名"),
+        kdl_user_pwd=os.getenv("kdl_user_pwd", "请填写您的快代理密码"),
     )

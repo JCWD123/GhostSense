@@ -297,10 +297,16 @@ secrets.json
 *.crt
 config.py
 MindSpider/config.py
+MindSpider/DeepSentimentCrawling/MediaCrawler/config/db_config.py
 
 # API 密钥
 api_keys.txt
 credentials.json
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
 
 # ==== 其他项目特定文件 ====
 # 词云生成的临时文件
