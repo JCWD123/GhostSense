@@ -64,9 +64,21 @@ async def update_zhihu_content(content_item: ZhihuContent):
 
     """
     content_item.source_keyword = source_keyword_var.get()
+    
+    # 截断过长的文本字段以避免数据库错误
+    # MySQL TEXT类型最大65535字节，LONGTEXT最大4GB，但实际可能受配置限制
+    MAX_TEXT_LENGTH = 60000  # 保守设置为60000字符
+    if content_item.content_text and len(content_item.content_text) > MAX_TEXT_LENGTH:
+        utils.logger.warning(f"[store.zhihu.update_zhihu_content] content_text too long ({len(content_item.content_text)} chars), truncating to {MAX_TEXT_LENGTH}")
+        content_item.content_text = content_item.content_text[:MAX_TEXT_LENGTH] + "...[内容过长已截断]"
+    
+    if content_item.desc and len(content_item.desc) > MAX_TEXT_LENGTH:
+        utils.logger.warning(f"[store.zhihu.update_zhihu_content] desc too long ({len(content_item.desc)} chars), truncating to {MAX_TEXT_LENGTH}")
+        content_item.desc = content_item.desc[:MAX_TEXT_LENGTH] + "...[内容过长已截断]"
+    
     local_db_item = content_item.model_dump()
     local_db_item.update({"last_modify_ts": utils.get_current_timestamp()})
-    utils.logger.info(f"[store.zhihu.update_zhihu_content] zhihu content: {local_db_item}")
+    utils.logger.info(f"[store.zhihu.update_zhihu_content] zhihu content id: {local_db_item.get('content_id')}, title: {local_db_item.get('title')}")
     await ZhihuStoreFactory.create_store().store_content(local_db_item)
 
 

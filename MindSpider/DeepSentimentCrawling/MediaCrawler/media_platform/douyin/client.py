@@ -96,8 +96,20 @@ class DouYinClient(AbstractApiClient):
             params["a_bogus"] = a_bogus
 
     async def request(self, method, url, **kwargs):
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
-            response = await client.request(method, url, timeout=self.timeout, **kwargs)
+        try:
+            async with httpx.AsyncClient(proxy=self.proxy) as client:
+                response = await client.request(method, url, timeout=self.timeout, **kwargs)
+        except httpx.ConnectError as e:
+            utils.logger.error(f"[DouyinClient.request] Network connection error: {e}")
+            utils.logger.error(f"[DouyinClient.request] Failed to connect to {url}")
+            return {}
+        except httpx.TimeoutException as e:
+            utils.logger.error(f"[DouyinClient.request] Request timeout: {e}")
+            return {}
+        except Exception as e:
+            utils.logger.error(f"[DouyinClient.request] Unexpected error during network request: {e}")
+            return {}
+        
         try:
             if response.text == "" or response.text == "blocked":
                 utils.logger.error(f"[DouyinClient.request] Account may be blocked, response.text: {response.text}")

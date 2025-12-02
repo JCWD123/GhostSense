@@ -79,8 +79,19 @@ class ZhiHuClient(AbstractApiClient):
         # return response.text
         return_response = kwargs.pop('return_response', False)
 
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
-            response = await client.request(method, url, timeout=self.timeout, **kwargs)
+        try:
+            async with httpx.AsyncClient(proxy=self.proxy) as client:
+                response = await client.request(method, url, timeout=self.timeout, **kwargs)
+        except httpx.ConnectError as e:
+            utils.logger.error(f"[ZhiHuClient.request] Network connection error: {e}")
+            utils.logger.error(f"[ZhiHuClient.request] Failed to connect to {url}")
+            return {}
+        except httpx.TimeoutException as e:
+            utils.logger.error(f"[ZhiHuClient.request] Request timeout: {e}")
+            return {}
+        except Exception as e:
+            utils.logger.error(f"[ZhiHuClient.request] Unexpected error during request: {e}")
+            return {}
 
         if response.status_code != 200:
             utils.logger.error(f"[ZhiHuClient.request] Requset Url: {url}, Request error: {response.text}")

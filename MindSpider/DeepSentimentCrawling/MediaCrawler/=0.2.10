@@ -1,0 +1,11 @@
+Collecting asyncmy
+  Using cached asyncmy-0.2.10.tar.gz (63 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: asyncmy
+  Building wheel for asyncmy (pyproject.toml): started
+  Building wheel for asyncmy (pyproject.toml): finished with status 'canceled'

@@ -45,8 +45,19 @@ class KuaiShouClient(AbstractApiClient):
         self.graphql = KuaiShouGraphQL()
 
     async def request(self, method, url, **kwargs) -> Any:
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
-            response = await client.request(method, url, timeout=self.timeout, **kwargs)
+        try:
+            async with httpx.AsyncClient(proxy=self.proxy) as client:
+                response = await client.request(method, url, timeout=self.timeout, **kwargs)
+        except httpx.ConnectError as e:
+            utils.logger.error(f"[KuaiShouClient.request] Network connection error: {e}")
+            utils.logger.error(f"[KuaiShouClient.request] Failed to connect to {url}")
+            return {}
+        except httpx.TimeoutException as e:
+            utils.logger.error(f"[KuaiShouClient.request] Request timeout: {e}")
+            return {}
+        except Exception as e:
+            utils.logger.error(f"[KuaiShouClient.request] Unexpected error during request: {e}")
+            return {}
         
         # 捕获JSON解析错误
         try:

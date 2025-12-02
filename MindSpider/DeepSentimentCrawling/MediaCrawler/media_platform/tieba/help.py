@@ -105,31 +105,78 @@ class TieBaExtractor:
 
         """
         content_selector = Selector(text=page_content)
+        
+        # 检测验证码或错误页面
+        if "百度安全验证" in page_content or "请输入验证码" in page_content:
+            utils.logger.error("[TieBaExtractor.extract_note_detail] 检测到验证码页面")
+            raise Exception("需要验证码验证，请稍后重试")
+        
+        if "抱歉，您访问的贴子不存在" in page_content or "该主题不存在" in page_content:
+            utils.logger.error("[TieBaExtractor.extract_note_detail] 帖子不存在或已被删除")
+            raise Exception("帖子不存在或已被删除")
+        
         first_floor_selector = content_selector.xpath("//div[@class='p_postlist'][1]")
         only_view_author_link = content_selector.xpath("//*[@id='lzonly_cntn']/@href").get(default='').strip()
-        note_id = only_view_author_link.split("?")[0].split("/")[-1]
+        
+        # 安全提取note_id
+        note_id = ''
+        if only_view_author_link:
+            try:
+                parts = only_view_author_link.split("?")[0].split("/")
+                note_id = parts[-1] if parts else ''
+            except Exception as e:
+                utils.logger.warning(f"[TieBaExtractor.extract_note_detail] 无法从链接提取note_id: {e}")
+        
+        if not note_id:
+            # 尝试从URL提取
+            url_match = content_selector.xpath("//link[@rel='canonical']/@href").get(default='')
+            if url_match:
+                try:
+                    note_id = url_match.split("/p/")[-1].split("?")[0]
+                except:
+                    pass
+        
         # 帖子回复数、回复页数
         thread_num_infos = content_selector.xpath(
             "//div[@id='thread_theme_5']//li[@class='l_reply_num']//span[@class='red']")
+        
+        # 安全提取回复数和页数
+        total_replay_num = ''
+        total_replay_page = ''
+        if len(thread_num_infos) >= 2:
+            total_replay_num = thread_num_infos[0].xpath("./text()").get(default='').strip()
+            total_replay_page = thread_num_infos[1].xpath("./text()").get(default='').strip()
+        elif len(thread_num_infos) == 1:
+            total_replay_num = thread_num_infos[0].xpath("./text()").get(default='').strip()
+        
         # IP地理位置、发表时间
         other_info_content = content_selector.xpath(".//div[@class='post-tail-wrap']").get(default="").strip()
         ip_location, publish_time = self.extract_ip_and_pub_time(other_info_content)
-        note = TiebaNote(note_id=note_id, title=content_selector.xpath("//title/text()").get(default='').strip(),
-                         desc=content_selector.xpath("//meta[@name='description']/@content").get(default='').strip(),
-                         note_url=const.TIEBA_URL + f"/p/{note_id}",
-                         user_link=const.TIEBA_URL + first_floor_selector.xpath(
-                             ".//a[@class='p_author_face ']/@href").get(default='').strip(),
-                         user_nickname=first_floor_selector.xpath(
-                             ".//a[@class='p_author_name j_user_card']/text()").get(default='').strip(),
-                         user_avatar=first_floor_selector.xpath(".//a[@class='p_author_face ']/img/@src").get(
-                             default='').strip(),
-                         tieba_name=content_selector.xpath("//a[@class='card_title_fname']/text()").get(
-                             default='').strip(), tieba_link=const.TIEBA_URL + content_selector.xpath(
-                "//a[@class='card_title_fname']/@href").get(default=''), ip_location=ip_location,
-                         publish_time=publish_time,
-                         total_replay_num=thread_num_infos[0].xpath("./text()").get(default='').strip(),
-                         total_replay_page=thread_num_infos[1].xpath("./text()").get(default='').strip(), )
-        note.title = note.title.replace(f"【{note.tieba_name}】_百度贴吧", "")
+        
+        note = TiebaNote(
+            note_id=note_id, 
+            title=content_selector.xpath("//title/text()").get(default='').strip(),
+            desc=content_selector.xpath("//meta[@name='description']/@content").get(default='').strip(),
+            note_url=const.TIEBA_URL + f"/p/{note_id}" if note_id else '',
+            user_link=const.TIEBA_URL + first_floor_selector.xpath(
+                ".//a[@class='p_author_face ']/@href").get(default='').strip(),
+            user_nickname=first_floor_selector.xpath(
+                ".//a[@class='p_author_name j_user_card']/text()").get(default='').strip(),
+            user_avatar=first_floor_selector.xpath(".//a[@class='p_author_face ']/img/@src").get(
+                default='').strip(),
+            tieba_name=content_selector.xpath("//a[@class='card_title_fname']/text()").get(
+                default='').strip(), 
+            tieba_link=const.TIEBA_URL + content_selector.xpath(
+                "//a[@class='card_title_fname']/@href").get(default=''), 
+            ip_location=ip_location,
+            publish_time=publish_time,
+            total_replay_num=total_replay_num,
+            total_replay_page=total_replay_page,
+        )
+        
+        if note.tieba_name:
+            note.title = note.title.replace(f"【{note.tieba_name}】_百度贴吧", "")
+        
         return note
     def extract_tieba_note_parment_comments(self, page_content: str, note_id: str) -> List[TiebaComment]:
         """

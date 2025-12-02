@@ -301,13 +301,36 @@ class BaiduTieBaClient(AbstractApiClient):
             page_content = await self.playwright_page.content()
             utils.logger.info(f"[BaiduTieBaClient.get_note_by_id] 成功获取帖子详情HTML,长度: {len(page_content)}")
 
+            # 检测验证码
+            if "百度安全验证" in page_content or "请输入验证码" in page_content:
+                utils.logger.error(f"[BaiduTieBaClient.get_note_by_id] 检测到验证码页面，note_id: {note_id}")
+                # 保存HTML用于调试
+                import os
+                debug_dir = "debug_html"
+                os.makedirs(debug_dir, exist_ok=True)
+                with open(f"{debug_dir}/tieba_captcha_{note_id}.html", "w", encoding="utf-8") as f:
+                    f.write(page_content)
+                utils.logger.info(f"[BaiduTieBaClient.get_note_by_id] 已保存验证码页面到 {debug_dir}/tieba_captcha_{note_id}.html")
+                return None
+
             # 提取帖子详情
             note_detail = self._page_extractor.extract_note_detail(page_content)
             return note_detail
 
         except Exception as e:
             utils.logger.error(f"[BaiduTieBaClient.get_note_by_id] 获取帖子详情失败: {e}")
-            raise
+            # 保存HTML用于调试
+            try:
+                import os
+                debug_dir = "debug_html"
+                os.makedirs(debug_dir, exist_ok=True)
+                page_content = await self.playwright_page.content()
+                with open(f"{debug_dir}/tieba_error_{note_id}.html", "w", encoding="utf-8") as f:
+                    f.write(page_content)
+                utils.logger.info(f"[BaiduTieBaClient.get_note_by_id] 已保存错误页面到 {debug_dir}/tieba_error_{note_id}.html")
+            except:
+                pass
+            return None
 
     async def get_note_all_comments(
         self,

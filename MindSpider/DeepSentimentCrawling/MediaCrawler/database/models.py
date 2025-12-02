@@ -369,11 +369,11 @@ class ZhihuContent(Base):
     id = Column(Integer, primary_key=True)
     content_id = Column(String(64), index=True)
     content_type = Column(Text)
-    content_text = Column(Text)
+    content_text = Column(Text(length=4294967295))  # LONGTEXT in MySQL
     content_url = Column(Text)
     question_id = Column(String(255))
     title = Column(Text)
-    desc = Column(Text)
+    desc = Column(Text(length=4294967295))  # LONGTEXT in MySQL
     created_time = Column(String(32), index=True)
     updated_time = Column(Text)
     voteup_count = Column(Integer, default=0)

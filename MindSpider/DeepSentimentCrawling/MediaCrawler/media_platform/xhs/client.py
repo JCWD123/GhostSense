@@ -312,8 +312,20 @@ class XiaoHongShuClient(AbstractApiClient):
         """
         # return response.text
         return_response = kwargs.pop("return_response", False)
-        async with httpx.AsyncClient(proxy=self.proxy) as client:
-            response = await client.request(method, url, timeout=self.timeout, **kwargs)
+        
+        try:
+            async with httpx.AsyncClient(proxy=self.proxy) as client:
+                response = await client.request(method, url, timeout=self.timeout, **kwargs)
+        except httpx.ConnectError as e:
+            utils.logger.error(f"[XiaoHongShuClient.request] Network connection error: {e}")
+            utils.logger.error(f"[XiaoHongShuClient.request] Failed to connect to {url}")
+            return {}
+        except httpx.TimeoutException as e:
+            utils.logger.error(f"[XiaoHongShuClient.request] Request timeout: {e}")
+            return {}
+        except Exception as e:
+            utils.logger.error(f"[XiaoHongShuClient.request] Unexpected error during request: {e}")
+            return {}
 
         if response.status_code == 471 or response.status_code == 461:
             # someday someone maybe will bypass captcha

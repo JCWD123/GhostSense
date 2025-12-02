@@ -414,6 +414,11 @@ class BilibiliCrawler(AbstractCrawler):
             try:
                 result = await self.bili_client.get_video_info(aid=aid, bvid=bvid)
                 
+                # 检查结果是否为空
+                if not result:
+                    utils.logger.warning(f"[BilibiliCrawler.get_video_info_task] Empty result for video {bvid or aid}")
+                    return None
+                
                 # Sleep after fetching video details
                 await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
                 utils.logger.info(f"[BilibiliCrawler.get_video_info_task] Sleeping for {config.CRAWLER_MAX_SLEEP_SEC} seconds after fetching video details {bvid or aid}")
@@ -424,6 +429,9 @@ class BilibiliCrawler(AbstractCrawler):
                 return None
             except KeyError as ex:
                 utils.logger.error(f"[BilibiliCrawler.get_video_info_task] have not fund note detail video_id:{bvid}, err: {ex}")
+                return None
+            except Exception as ex:
+                utils.logger.error(f"[BilibiliCrawler.get_video_info_task] Unexpected error: {ex}")
                 return None
 
     async def get_video_play_url_task(self, aid: int, cid: int, semaphore: asyncio.Semaphore) -> Union[Dict, None]:
