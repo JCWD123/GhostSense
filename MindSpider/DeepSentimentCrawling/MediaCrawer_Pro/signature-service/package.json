@@ -1,0 +1,38 @@
+{
+  "name": "mediacrawler-signature-sdk",
+  "version": "2.0.0",
+  "description": "MediaCrawler 签名算法 SDK - 支持纯JS逆向和Playwright浏览器获取",
+  "main": "src/sdk/index.js",
+  "scripts": {
+    "start": "node src/api/server.js",
+    "dev": "nodemon src/api/server.js",
+    "test": "node tests/test_all.js"
+  },
+  "keywords": [
+    "signature",
+    "crawler",
+    "xiaohongshu",
+    "douyin",
+    "playwright",
+    "electron",
+    "sdk"
+  ],
+  "author": "MediaCrawler Team",
+  "license": "MIT",
+  "dependencies": {
+    "fastify": "^4.26.0",
+    "playwright": "^1.40.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "exports": {
+    ".": "./src/sdk/index.js",
+    "./core": "./src/core/xhs_signature.js",
+    "./playwright": "./src/playwright/xhs_browser.js"
+  }
+}
+
+
+
+

@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # ==================== MongoDB（可选：如果使用本地数据库）====================
+  # 如果使用云数据库，请注释掉此部分
+  # mongodb:
+  #   image: mongo:6.0
+  #   container_name: mediacrawer_mongodb
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #     - mongodb_config:/data/configdb
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: admin
+  #     MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-mediacrawer123}
+  #     MONGO_INITDB_DATABASE: media_crawer_pro
+  #   networks:
+  #     - mediacrawer_network
+
+  # ==================== Redis（可选：如果需要缓存）====================
+  redis:
+    image: redis:7-alpine
+    container_name: mediacrawer_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - mediacrawer_network
+
+  # ==================== 签名服务 ====================
+  signature-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.signature
+    container_name: mediacrawer_signature
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      NODE_ENV: production
+      PORT: 3100
+    networks:
+      - mediacrawer_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ==================== 后端服务 ====================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: mediacrawer_backend
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    environment:
+      # 数据库配置（连接到云数据库）
+      MONGODB_URL: ${MONGODB_URL:-mongodb://host.docker.internal:27017}
+      DATABASE_NAME: ${DATABASE_NAME:-media_crawer_pro}
+      
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # 签名服务配置
+      SIGNATURE_SERVICE_URL: http://signature-service:3100
+      SIGNATURE_MODE: ${SIGNATURE_MODE:-auto}
+      
+      # API 配置
+      API_PORT: 8888
+      DEBUG: ${DEBUG:-false}
+      
+      # 日志配置
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./downloads:/app/downloads
+      - ./logs:/app/logs
+    depends_on:
+      - signature-service
+      - redis
+      # - mongodb  # 如果使用本地 MongoDB，取消注释
+    networks:
+      - mediacrawer_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  mediacrawer_network:
+    driver: bridge
+
+volumes:
+  # mongodb_data:  # 如果使用本地 MongoDB，取消注释
+  # mongodb_config:
+  redis_data:
+
+

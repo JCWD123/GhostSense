@@ -11,13 +11,12 @@
 
 import os
 
-# ==================== MySQL 数据库配置 ====================
-# 请根据实际情况填写您的MySQL数据库连接信息
-MYSQL_DB_PWD = os.getenv("MYSQL_DB_PWD", "your_mysql_password")  # 您的MySQL数据库密码
-MYSQL_DB_USER = os.getenv("MYSQL_DB_USER", "your_mysql_user")  # 您的MySQL数据库用户名
-MYSQL_DB_HOST = os.getenv("MYSQL_DB_HOST", "localhost")  # MySQL主机地址
-MYSQL_DB_PORT = int(os.getenv("MYSQL_DB_PORT", "3306"))  # MySQL端口号
-MYSQL_DB_NAME = os.getenv("MYSQL_DB_NAME", "your_database_name")  # 数据库名称
+# mysql config - 使用MindSpider的数据库配置
+MYSQL_DB_PWD = "MyPassw0rd!"
+MYSQL_DB_USER = "root"
+MYSQL_DB_HOST = "localhost"
+MYSQL_DB_PORT = 3306
+MYSQL_DB_NAME = "xhs"
 
 mysql_db_config = {
     "user": MYSQL_DB_USER,
@@ -28,12 +27,11 @@ mysql_db_config = {
 }
 
 
-# ==================== Redis 缓存配置 ====================
-# 如果需要使用Redis缓存，请填写以下信息
-REDIS_DB_HOST = os.getenv("REDIS_DB_HOST", "127.0.0.1")  # Redis主机地址
-REDIS_DB_PWD = os.getenv("REDIS_DB_PWD", "your_redis_password")  # Redis密码
-REDIS_DB_PORT = os.getenv("REDIS_DB_PORT", 6379)  # Redis端口号
-REDIS_DB_NUM = os.getenv("REDIS_DB_NUM", 0)  # Redis数据库编号
+# redis config
+REDIS_DB_HOST = "127.0.0.1"  # your redis host
+REDIS_DB_PWD = os.getenv("REDIS_DB_PWD", "123456")  # your redis password
+REDIS_DB_PORT = os.getenv("REDIS_DB_PORT", 6379)  # your redis port
+REDIS_DB_NUM = os.getenv("REDIS_DB_NUM", 0)  # your redis db num
 
 # cache type
 CACHE_TYPE_REDIS = "redis"
@@ -46,13 +44,12 @@ sqlite_db_config = {
     "db_path": SQLITE_DB_PATH
 }
 
-# ==================== PostgreSQL 数据库配置 ====================
-# 如果使用PostgreSQL数据库，请填写以下信息
-POSTGRESQL_DB_PWD = os.getenv("POSTGRESQL_DB_PWD", "your_postgresql_password")  # PostgreSQL密码
-POSTGRESQL_DB_USER = os.getenv("POSTGRESQL_DB_USER", "your_postgresql_user")  # PostgreSQL用户名
-POSTGRESQL_DB_HOST = os.getenv("POSTGRESQL_DB_HOST", "127.0.0.1")  # PostgreSQL主机地址
-POSTGRESQL_DB_PORT = os.getenv("POSTGRESQL_DB_PORT", "5432")  # PostgreSQL端口号
-POSTGRESQL_DB_NAME = os.getenv("POSTGRESQL_DB_NAME", "your_database_name")  # PostgreSQL数据库名称
+# postgresql config - 使用MindSpider的数据库配置（如果DB_DIALECT是postgresql）或环境变量
+POSTGRESQL_DB_PWD = os.getenv("POSTGRESQL_DB_PWD", "bettafish")
+POSTGRESQL_DB_USER = os.getenv("POSTGRESQL_DB_USER", "bettafish")
+POSTGRESQL_DB_HOST = os.getenv("POSTGRESQL_DB_HOST", "127.0.0.1")
+POSTGRESQL_DB_PORT = os.getenv("POSTGRESQL_DB_PORT", "5432")
+POSTGRESQL_DB_NAME = os.getenv("POSTGRESQL_DB_NAME", "bettafish")
 
 postgresql_db_config = {
     "user": POSTGRESQL_DB_USER,

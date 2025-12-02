@@ -131,7 +131,6 @@ class TieBaExtractor:
                          total_replay_page=thread_num_infos[1].xpath("./text()").get(default='').strip(), )
         note.title = note.title.replace(f"【{note.tieba_name}】_百度贴吧", "")
         return note
-
     def extract_tieba_note_parment_comments(self, page_content: str, note_id: str) -> List[TiebaComment]:
         """
         提取贴吧帖子一级评论
@@ -416,3 +415,4 @@ if __name__ == '__main__':
     # test_extract_tieba_note_parment_comments()
     # test_extract_tieba_note_list()
     test_extract_creator_info()
+

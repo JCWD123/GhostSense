@@ -9,11 +9,27 @@
 # 使用本代码即表示您同意遵守上述原则和LICENSE中的所有条款。
 
 # 基础配置
-PLATFORM = "bili"  # 平台，xhs | dy | ks | bili | wb | tieba | zhihu
-KEYWORDS = "电影鬼灭之刃,亲属想侵吞3姐妹亡父赔偿款,网警斩断侵害未成年人网络黑色产业链,2007年后出生的人不能在马尔代夫吸烟,沈月,是公主也是自己的骑士,以军虐囚视频,唐朝诡事录,广州地铁回应APP乘车码频繁弹窗广告,全红婵的减肥计划精确到克"  # 关键词搜索配置，以英文逗号分隔
+PLATFORM = "ks"  # 平台，xhs | dy | ks | bili | wb | tieba | zhihu
+KEYWORDS = "郭炜炜,卢旺达,中国男篮,王楚钦,楼市,英伟达,疯狂动物城2,印尼洪灾,Viper,G7,宁波富豪,卷款跑路,马克龙访华,蔚来事故,抖音舞蹈,打印机,特斯拉,军嫂,GitHub趋势,解限机,贴吧热议,万科债券,大埔火灾,字节跳动,DeepSeek,狼队小胖,宁德时代涨薪,丁少华,艾滋病,比亚迪销量,西山居,泽连斯基,朱征夫,流感,日本船只,白百何,中国航天,华为Mate80,广州起火,婚检,电动自行车新国标,酷安夜话,经济舱座位,余华,荒野求生,BLG,胡歌,富家女骗钱,朴赞郁,电动自行车停售"  # 关键词搜索配置，以英文逗号分隔
 LOGIN_TYPE = "qrcode"  # qrcode or phone or cookie
 COOKIES = ""
 CRAWLER_TYPE = "search"  # 爬取类型，search(关键词搜索) | detail(帖子详情)| creator(创作者主页数据)
+
+# ==================== DrissionPage 配置 ====================
+# 是否使用 DrissionPage 替代 Playwright（仅支持小红书平台）
+# DrissionPage 优势：不基于 webdriver，更难被检测，运行速度更快
+# 推荐在遇到反爬虫检测时启用此选项
+USE_DRISSION_PAGE = True
+
+# 自定义 DrissionPage 浏览器路径（可选）
+# 如果留空则自动检测。若在 WSL/服务器环境运行，请将其设置为浏览器可执行文件的绝对路径
+# 若需强制使用 WSL 内已安装的 Chrome，请填写绝对路径
+DRISSION_BROWSER_PATH = "/usr/bin/google-chrome-stable"
+
+# 是否连接到已运行的浏览器（CDP 模式，需手动启动带远程调试端口的 Chrome/Edge）
+DRISSION_ATTACH_TO_BROWSER = True
+DRISSION_REMOTE_DEBUG_HOST = "127.0.0.1"
+DRISSION_REMOTE_DEBUG_PORT = 9222
 
 # 是否开启 IP 代理
 ENABLE_IP_PROXY = False
@@ -61,7 +77,7 @@ BROWSER_LAUNCH_TIMEOUT = 30
 AUTO_CLOSE_BROWSER = True
 
 # 数据保存类型选项配置,支持五种类型：csv、db、json、sqlite、postgresql, 最好保存到DB，有排重的功能。
-SAVE_DATA_OPTION = "postgresql"  # csv or db or json or sqlite or postgresql
+SAVE_DATA_OPTION = "db"  # csv or db or json or sqlite or postgresql
 
 # 用户浏览器缓存的浏览器文件配置
 USER_DATA_DIR = "%s_user_data_dir"  # %s will be replaced by platform name
@@ -70,7 +86,7 @@ USER_DATA_DIR = "%s_user_data_dir"  # %s will be replaced by platform name
 START_PAGE = 1
 
 # 爬取视频/帖子的数量控制
-CRAWLER_MAX_NOTES_COUNT = 5
+CRAWLER_MAX_NOTES_COUNT = 50
 
 # 并发爬虫数量控制
 MAX_CONCURRENCY_NUM = 1

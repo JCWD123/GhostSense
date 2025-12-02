@@ -1,0 +1,34 @@
+node_modules/
+# Standard Git Ignore Rules
+# Added by automated redirect script
+# IDE files
+.idea/
+.vscode/
+*.code-workspace
+# Python compiled files
+__pycache__/
+*.py[cod]
+*.pyd
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+# Log files
+logs/
+*.log
+# Environment variables
+.env
+.env.local
+.secret
+# OS generated files
+.DS_Store
+Thumbs.db
+# Coverage files
+.coverage
+htmlcov/
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.pyc
