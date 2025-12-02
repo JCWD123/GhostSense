@@ -85,11 +85,14 @@ class ZhiHuClient(AbstractApiClient):
         if response.status_code != 200:
             utils.logger.error(f"[ZhiHuClient.request] Requset Url: {url}, Request error: {response.text}")
             if response.status_code == 403:
-                raise ForbiddenError(response.text)
+                utils.logger.warning(f"[ZhiHuClient.request] 403 Forbidden, may need to update cookies or wait")
+                return {}
             elif response.status_code == 404:  # 如果一个content没有评论也是404
                 return {}
-
-            raise DataFetchError(response.text)
+            else:
+                # 其他错误返回空数据而不是抛出异常
+                utils.logger.warning(f"[ZhiHuClient.request] Status {response.status_code}, returning empty data")
+                return {}
 
         if return_response:
             return response.text
@@ -97,11 +100,13 @@ class ZhiHuClient(AbstractApiClient):
             data: Dict = response.json()
             if data.get("error"):
                 utils.logger.error(f"[ZhiHuClient.request] Request error: {data}")
-                raise DataFetchError(data.get("error", {}).get("message"))
+                # 返回空数据而不是抛出异常
+                return {}
             return data
         except json.JSONDecodeError:
-            utils.logger.error(f"[ZhiHuClient.request] Request error: {response.text}")
-            raise DataFetchError(response.text)
+            utils.logger.error(f"[ZhiHuClient.request] JSON decode error: {response.text}")
+            # 返回空数据而不是抛出异常
+            return {}
 
     async def get(self, uri: str, params=None, **kwargs) -> Union[Response, Dict, str]:
         """

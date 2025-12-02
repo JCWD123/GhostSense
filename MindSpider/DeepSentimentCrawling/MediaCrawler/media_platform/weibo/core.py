@@ -152,8 +152,18 @@ class WeiboCrawler(AbstractCrawler):
                     continue
                 utils.logger.info(f"[WeiboCrawler.search] search weibo keyword: {keyword}, page: {page}")
                 search_res = await self.wb_client.get_note_by_keyword(keyword=keyword, page=page, search_type=search_type)
+                
+                if not search_res:
+                    utils.logger.warning(f"[WeiboCrawler.search] Empty response for keyword: {keyword}, page: {page}")
+                    continue
+                    
                 note_id_list: List[str] = []
-                note_list = filter_search_result_card(search_res.get("cards"))
+                cards = search_res.get("cards")
+                if not cards:
+                    utils.logger.warning(f"[WeiboCrawler.search] No cards found for keyword: {keyword}, page: {page}")
+                    continue
+                    
+                note_list = filter_search_result_card(cards)
                 for note_item in note_list:
                     if note_item:
                         mblog: Dict = note_item.get("mblog")

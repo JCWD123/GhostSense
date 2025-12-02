@@ -151,13 +151,18 @@ class KuaishouCrawler(AbstractCrawler):
                     continue
 
                 vision_search_photo: Dict = videos_res.get("visionSearchPhoto")
-                if vision_search_photo.get("result") != 1:
+                if not vision_search_photo or vision_search_photo.get("result") != 1:
                     utils.logger.error(
-                        f"[KuaishouCrawler.search] search info by keyword:{keyword} not found data "
+                        f"[KuaishouCrawler.search] search info by keyword:{keyword} not found data or result not valid"
                     )
                     continue
                 search_session_id = vision_search_photo.get("searchSessionId", "")
-                for video_detail in vision_search_photo.get("feeds"):
+                feeds = vision_search_photo.get("feeds", [])
+                if not feeds:
+                    utils.logger.warning(f"[KuaishouCrawler.search] No feeds found for keyword:{keyword}")
+                    continue
+                    
+                for video_detail in feeds:
                     video_id_list.append(video_detail.get("photo", {}).get("id"))
                     await kuaishou_store.update_kuaishou_video(video_item=video_detail)
 

@@ -49,7 +49,10 @@ class KuaiShouClient(AbstractApiClient):
             response = await client.request(method, url, timeout=self.timeout, **kwargs)
         data: Dict = response.json()
         if data.get("errors"):
-            raise DataFetchError(data.get("errors", "unkonw error"))
+            error_msg = data.get("errors", "unknown error")
+            utils.logger.error(f"[KuaiShouClient.request] GraphQL API error: {error_msg}")
+            # 返回空数据而不是抛出异常，让调用方处理
+            return {}
         else:
             return data.get("data", {})
 

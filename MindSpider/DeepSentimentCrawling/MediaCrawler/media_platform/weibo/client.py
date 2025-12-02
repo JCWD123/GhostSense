@@ -62,10 +62,12 @@ class WeiboClient:
         ok_code = data.get("ok")
         if ok_code == 0:  # response error
             utils.logger.error(f"[WeiboClient.request] request {method}:{url} err, res:{data}")
-            raise DataFetchError(data.get("msg", "response error"))
+            # 返回空数据而不是抛出异常，让调用方处理
+            return {}
         elif ok_code != 1:  # unknown error
             utils.logger.error(f"[WeiboClient.request] request {method}:{url} err, res:{data}")
-            raise DataFetchError(data.get("msg", "unknown error"))
+            # 返回空数据而不是抛出异常，让调用方处理
+            return {}
         else:  # response right
             return data.get("data", {})
 
