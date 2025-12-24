@@ -274,3 +274,12 @@ python main.py --platform xhs --lt cookie --type search
 
 **祝你爬取顺利！** 🎉
 
+
+
+
+
+
+
+
+
+

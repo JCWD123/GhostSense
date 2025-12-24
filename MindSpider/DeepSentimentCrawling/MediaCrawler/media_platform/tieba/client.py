@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2025 relakkes@gmail.com
+#
+# This file is part of MediaCrawler project.
+# Repository: https://github.com/NanmiCoder/MediaCrawler/blob/main/media_platform/tieba/client.py
+# GitHub: https://github.com/NanmiCoder
+# Licensed under NON-COMMERCIAL LEARNING LICENSE 1.1
+#
+
 # 声明：本代码仅供学习和研究目的使用。使用者应遵守以下原则：
 # 1. 不得用于任何商业用途。
 # 2. 使用时应遵守目标平台的使用条款和robots.txt规则。
@@ -80,6 +89,24 @@ class BaiduTieBaClient(AbstractApiClient):
         )
         return response
 
+    async def _refresh_proxy_if_expired(self) -> None:
+        """
+        检测代理是否过期，如果过期则自动刷新
+        """
+        if self.ip_pool is None:
+            return
+
+        if self.ip_pool.is_current_proxy_expired():
+            utils.logger.info(
+                "[BaiduTieBaClient._refresh_proxy_if_expired] Proxy expired, refreshing..."
+            )
+            new_proxy = await self.ip_pool.get_or_refresh_proxy()
+            # 更新代理URL
+            _, self.default_ip_proxy = utils.format_proxy_info(new_proxy)
+            utils.logger.info(
+                f"[BaiduTieBaClient._refresh_proxy_if_expired] New proxy: {new_proxy.ip}:{new_proxy.port}"
+            )
+
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
     async def request(self, method, url, return_ori_content=False, proxy=None, **kwargs) -> Union[str, Any]:
         """
@@ -94,6 +121,9 @@ class BaiduTieBaClient(AbstractApiClient):
         Returns:
 
         """
+        # 每次请求前检测代理是否过期
+        await self._refresh_proxy_if_expired()
+
         actual_proxy = proxy if proxy else self.default_ip_proxy
 
         # 在线程池中执行同步的requests请求
@@ -106,22 +136,18 @@ class BaiduTieBaClient(AbstractApiClient):
         )
 
         if response.status_code != 200:
-            utils.logger.error(f"[TiebaClient.request] Request failed, method: {method}, url: {url}, status code: {response.status_code}")
-            utils.logger.error(f"[TiebaClient.request] Response: {response.text[:500]}")
-            return {}
+            utils.logger.error(f"Request failed, method: {method}, url: {url}, status code: {response.status_code}")
+            utils.logger.error(f"Request failed, response: {response.text}")
+            raise Exception(f"Request failed, method: {method}, url: {url}, status code: {response.status_code}")
 
         if response.text == "" or response.text == "blocked":
-            utils.logger.error(f"[TiebaClient.request] Account may be blocked, response.text: {response.text}")
-            return {}
+            utils.logger.error(f"request params incorrect, response.text: {response.text}")
+            raise Exception("account blocked")
 
         if return_ori_content:
             return response.text
 
-        try:
-            return response.json()
-        except Exception as e:
-            utils.logger.error(f"[TiebaClient.request] Failed to parse JSON: {e}, response: {response.text[:500]}")
-            return {}
+        return response.json()
 
     async def get(self, uri: str, params=None, return_ori_content=False, **kwargs) -> Any:
         """

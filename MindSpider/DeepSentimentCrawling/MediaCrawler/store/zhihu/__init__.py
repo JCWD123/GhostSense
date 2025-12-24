@@ -15,10 +15,20 @@ from typing import List
 import config
 from base.base_crawler import AbstractStore
 from model.m_zhihu import ZhihuComment, ZhihuContent, ZhihuCreator
-from ._store_impl import (ZhihuCsvStoreImplement,
-                                          ZhihuDbStoreImplement,
-                                          ZhihuJsonStoreImplement,
-                                          ZhihuSqliteStoreImplement)
+from ._store_impl import (
+    ZhihuCsvStoreImplement,
+    ZhihuDbStoreImplement,
+    ZhihuJsonStoreImplement,
+    ZhihuSqliteStoreImplement,
+)
+
+try:
+    from ._store_impl import ZhihuMongoStoreImplement  # type: ignore
+except ImportError as mongo_import_error:
+    ZhihuMongoStoreImplement = None  # type: ignore
+    _zhihu_mongo_import_error = mongo_import_error
+else:
+    _zhihu_mongo_import_error = None
 from tools import utils
 from var import source_keyword_var
 
@@ -31,12 +41,18 @@ class ZhihuStoreFactory:
         "sqlite": ZhihuSqliteStoreImplement,
         "postgresql": ZhihuDbStoreImplement,
     }
+    if ZhihuMongoStoreImplement:
+        STORES["mongodb"] = ZhihuMongoStoreImplement
 
     @staticmethod
     def create_store() -> AbstractStore:
         store_class = ZhihuStoreFactory.STORES.get(config.SAVE_DATA_OPTION)
         if not store_class:
-            raise ValueError("[ZhihuStoreFactory.create_store] Invalid save option only supported csv or db or json or sqlite or postgresql ...")
+            if config.SAVE_DATA_OPTION == "mongodb" and _zhihu_mongo_import_error:
+                raise ImportError(
+                    "[ZhihuStoreFactory.create_store] MongoDB 存储未可用，请确认已安装 pymongo 并正确配置 MongoDB。"
+                ) from _zhihu_mongo_import_error
+            raise ValueError("[ZhihuStoreFactory.create_store] Invalid save option only supported csv or db or json or sqlite or postgresql or mongodb ...")
         return store_class()
 
 async def batch_update_zhihu_contents(contents: List[ZhihuContent]):

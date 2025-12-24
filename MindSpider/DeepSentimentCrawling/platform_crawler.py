@@ -201,7 +201,8 @@ postgresql_db_config = {{
             return False
     
     def run_crawler(self, platform: str, keywords: List[str], 
-                   login_type: str = "qrcode", max_notes: int = 50) -> Dict:
+                   login_type: str = "qrcode", max_notes: int = 50,
+                   save_data_option: str = None) -> Dict:
         """
         运行爬虫
         
@@ -235,10 +236,11 @@ postgresql_db_config = {{
             if not self.create_base_config(platform, keywords, "search", max_notes):
                 return {"success": False, "error": "基础配置创建失败"}
             
-            # 判断数据库类型，确定 save_data_option
-            db_dialect = (config.settings.DB_DIALECT or "mysql").lower()
-            is_postgresql = db_dialect in ("postgresql", "postgres")
-            save_data_option = "postgresql" if is_postgresql else "db"
+            # 判断数据库类型，确定 save_data_option（如果未指定）
+            if not save_data_option:
+                db_dialect = (config.settings.DB_DIALECT or "mysql").lower()
+                is_postgresql = db_dialect in ("postgresql", "postgres")
+                save_data_option = "postgresql" if is_postgresql else "db"
             
             # 构建命令
             cmd = [
@@ -283,6 +285,7 @@ postgresql_db_config = {{
             else:
                 logger.error(f"❌ {platform} 爬取失败，返回码: {result.returncode}")
             
+            logger.info(f"🔄 {platform} subprocess 调用结束，返回统计信息")
             return crawl_stats
             
         except subprocess.TimeoutExpired:
@@ -331,7 +334,8 @@ postgresql_db_config = {{
         return stats
     
     def run_multi_platform_crawl_by_keywords(self, keywords: List[str], platforms: List[str],
-                                            login_type: str = "qrcode", max_notes_per_keyword: int = 50) -> Dict:
+                                            login_type: str = "qrcode", max_notes_per_keyword: int = 50,
+                                            save_data_option: str = None) -> Dict:
         """
         基于关键词的多平台爬取 - 每个关键词在所有平台上都进行爬取
         
@@ -375,13 +379,18 @@ postgresql_db_config = {{
             }
         
         # 对每个平台一次性爬取所有关键词
+        platform_index = 0
+        total_platforms = len(platforms)
         for platform in platforms:
-            logger.info(f"\n📝 在 {platform} 平台爬取所有关键词")
+            platform_index += 1
+            logger.info(f"\n{'='*60}")
+            logger.info(f"📝 [{platform_index}/{total_platforms}] 开始爬取平台: {platform}")
+            logger.info(f"{'='*60}")
             logger.info(f"   关键词: {', '.join(keywords[:5])}{'...' if len(keywords) > 5 else ''}")
             
             try:
                 # 一次性传递所有关键词给平台
-                result = self.run_crawler(platform, keywords, login_type, max_notes_per_keyword)
+                result = self.run_crawler(platform, keywords, login_type, max_notes_per_keyword, save_data_option)
                 
                 if result.get("success"):
                     total_stats["successful_tasks"] += len(keywords)
@@ -402,6 +411,7 @@ postgresql_db_config = {{
                         total_stats["keyword_results"][keyword][platform] = result
                     
                     logger.info(f"   ✅ 成功: {notes_count} 条内容, {comments_count} 条评论")
+                    logger.info(f"   ✅ 平台 {platform} 爬取完成，准备下一个平台...")
                 else:
                     total_stats["failed_tasks"] += len(keywords)
                     total_stats["platform_summary"][platform]["failed_keywords"] = len(keywords)
@@ -413,6 +423,7 @@ postgresql_db_config = {{
                         total_stats["keyword_results"][keyword][platform] = result
                     
                     logger.error(f"   ❌ 失败: {result.get('error', '未知错误')}")
+                    logger.info(f"   ⚠️ 平台 {platform} 爬取失败，但继续下一个平台...")
             
             except Exception as e:
                 total_stats["failed_tasks"] += len(keywords)
@@ -425,7 +436,8 @@ postgresql_db_config = {{
                         total_stats["keyword_results"][keyword] = {}
                     total_stats["keyword_results"][keyword][platform] = error_result
                 
-                logger.error(f"   ❌ 异常: {e}")
+                logger.exception(f"   ❌ 平台 {platform} 发生异常: {e}")
+                logger.info(f"   ⚠️ 跳过平台 {platform}，继续下一个平台...")
         
         # 打印详细统计
         finish_message = f"\n📊 全平台关键词爬取完成!"

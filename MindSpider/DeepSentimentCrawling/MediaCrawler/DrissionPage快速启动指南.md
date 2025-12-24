@@ -386,3 +386,12 @@ python main.py --platform xhs --lt qrcode --type search
 **最后更新：** 2025-12-01
 **版本：** v1.0.0
 
+
+
+
+
+
+
+
+
+

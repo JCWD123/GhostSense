@@ -25,6 +25,7 @@ class TieBaStoreFactory:
         "json": TieBaJsonStoreImplement,
         "sqlite": TieBaSqliteStoreImplement,
         "postgresql": TieBaDbStoreImplement,
+        "mongodb": TieBaMongoStoreImplement,
     }
 
     @staticmethod
@@ -32,7 +33,7 @@ class TieBaStoreFactory:
         store_class = TieBaStoreFactory.STORES.get(config.SAVE_DATA_OPTION)
         if not store_class:
             raise ValueError(
-                "[TieBaStoreFactory.create_store] Invalid save option only supported csv or db or json or sqlite or postgresql ...")
+                "[TieBaStoreFactory.create_store] Invalid save option only supported csv or db or json or sqlite or postgresql or mongodb ...")
         return store_class()
 
 

@@ -230,7 +230,7 @@ class MindSpider:
     
     def run_deep_sentiment_crawling(self, target_date: date = None, platforms: list = None,
                                    max_keywords: int = 50, max_notes: int = 50,
-                                   test_mode: bool = False) -> bool:
+                                   test_mode: bool = False, save_data_option: str = None) -> bool:
         """运行DeepSentimentCrawling模块"""
         logger.info("运行DeepSentimentCrawling模块...")
         
@@ -254,12 +254,15 @@ class MindSpider:
             if test_mode:
                 cmd.append("--test")
             
+            if save_data_option:
+                cmd.extend(["--save-data-option", save_data_option])
+            
             logger.info(f"执行命令: {' '.join(cmd)}")
             
             result = subprocess.run(
                 cmd,
                 cwd=self.deep_sentiment_path,
-                timeout=3600  # 60分钟超时
+                timeout=21600  # 6小时超时（7个平台，每个平台约50分钟）
             )
             
             if result.returncode == 0:
@@ -278,7 +281,7 @@ class MindSpider:
     
     def run_complete_workflow(self, target_date: date = None, platforms: list = None,
                              keywords_count: int = 100, max_keywords: int = 50,
-                             max_notes: int = 50, test_mode: bool = False) -> bool:
+                             max_notes: int = 50, test_mode: bool = False, save_data_option: str = None) -> bool:
         """运行完整工作流程"""
         logger.info("开始完整的MindSpider工作流程")
         
@@ -288,6 +291,7 @@ class MindSpider:
         logger.info(f"目标日期: {target_date}")
         logger.info(f"平台列表: {platforms if platforms else '所有支持的平台'}")
         logger.info(f"测试模式: {'是' if test_mode else '否'}")
+        logger.info(f"数据存储方式: {save_data_option if save_data_option else '默认'}")
         
         # 第一步：运行话题提取
         logger.info("=== 第一步：话题提取 ===")
@@ -297,7 +301,7 @@ class MindSpider:
         
         # 第二步：运行情感爬取
         logger.info("=== 第二步：情感爬取 ===")
-        if not self.run_deep_sentiment_crawling(target_date, platforms, max_keywords, max_notes, test_mode):
+        if not self.run_deep_sentiment_crawling(target_date, platforms, max_keywords, max_notes, test_mode, save_data_option):
             logger.error("情感爬取失败，但话题提取已完成")
             return False
         
@@ -380,6 +384,9 @@ def main():
     parser.add_argument("--max-keywords", type=int, default=50, help="每个平台最大关键词数量")
     parser.add_argument("--max-notes", type=int, default=50, help="每个关键词最大爬取内容数量")
     parser.add_argument("--test", action="store_true", help="测试模式（少量数据）")
+    parser.add_argument("--save-data-option", type=str, 
+                       choices=['csv', 'db', 'json', 'sqlite', 'postgresql', 'mongodb'],
+                       help="数据保存方式 (csv/db/json/sqlite/postgresql/mongodb)")
     
     args = parser.parse_args()
     
@@ -422,19 +429,19 @@ def main():
             spider.run_broad_topic_extraction(target_date, args.keywords_count)
         elif args.deep_sentiment:
             spider.run_deep_sentiment_crawling(
-                target_date, args.platforms, args.max_keywords, args.max_notes, args.test
+                target_date, args.platforms, args.max_keywords, args.max_notes, args.test, args.save_data_option
             )
         elif args.complete:
             spider.run_complete_workflow(
                 target_date, args.platforms, args.keywords_count, 
-                args.max_keywords, args.max_notes, args.test
+                args.max_keywords, args.max_notes, args.test, args.save_data_option
             )
         else:
             # 默认运行完整工作流程
             logger.info("运行完整MindSpider工作流程...")
             spider.run_complete_workflow(
                 target_date, args.platforms, args.keywords_count,
-                args.max_keywords, args.max_notes, args.test
+                args.max_keywords, args.max_notes, args.test, args.save_data_option
             )
     
     except KeyboardInterrupt:

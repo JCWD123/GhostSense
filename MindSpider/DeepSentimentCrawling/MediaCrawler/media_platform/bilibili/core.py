@@ -576,7 +576,13 @@ class BilibiliCrawler(AbstractCrawler):
         if result is None:
             utils.logger.info("[BilibiliCrawler.get_bilibili_video] get video play url failed")
             return
-        durl_list = result.get("durl")
+        durl_list = result.get("durl") or []
+        if not durl_list:
+            err_msg = result.get("message") or "empty durl list"
+            utils.logger.warning(
+                f"[BilibiliCrawler.get_bilibili_video] video {aid}|{cid} play url response invalid: {err_msg}"
+            )
+            return
         max_size = -1
         video_url = ""
         for durl in durl_list:

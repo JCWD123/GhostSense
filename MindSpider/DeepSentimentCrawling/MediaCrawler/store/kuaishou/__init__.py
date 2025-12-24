@@ -28,6 +28,7 @@ class KuaishouStoreFactory:
         "json": KuaishouJsonStoreImplement,
         "sqlite": KuaishouSqliteStoreImplement,
         "postgresql": KuaishouDbStoreImplement,
+        "mongodb": KuaishouMongoStoreImplement,
     }
 
     @staticmethod
@@ -35,7 +36,7 @@ class KuaishouStoreFactory:
         store_class = KuaishouStoreFactory.STORES.get(config.SAVE_DATA_OPTION)
         if not store_class:
             raise ValueError(
-                "[KuaishouStoreFactory.create_store] Invalid save option only supported csv or db or json or sqlite or postgresql ...")
+                "[KuaishouStoreFactory.create_store] Invalid save option only supported csv or db or json or sqlite or postgresql or mongodb ...")
         return store_class()
 
 
